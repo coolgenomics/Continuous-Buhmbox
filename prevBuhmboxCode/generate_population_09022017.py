@@ -20,121 +20,123 @@ import matplotlib.pyplot as plt
 
 from generate_snps_09022017 import generate_pss_model, calc_heritability
 
-class Individual():
+class Individual(object):
     def __init__(self,snp_props,sample_posterior=False,case1=False,case2=False,thres=2.0):
         assert len(snp_props)>0
         self.geno = [] # {0,1,2}
         #self.geno_mean0 = [] # adjusted to mean 0
         self.pheno = [0.0] * len(snp_props[0].beta)
+        self.is_alt = False
         #self.pheno_sum = [0.0] * len(snp_props[0].beta)
 
-        if sample_posterior:
+        # sample SNPs according to SNP props
+        for snp in snp_props:
+            p = snp.p          
+            pp = random.random()
+            if pp < p**2.0:
+                g = 2.0
+            elif pp < p**2.0 + 2.0*p*(1.0-p):
+                g = 1.0
+            else:
+                g = 0.0
+            self.geno.append(g)
+            #gg = g - 2*p
+            #gg /= math.sqrt(2*p*(1-p))
+            #self.geno_mean0.append(gg)
 
-            snp_order = range(len(snp_props))
-            #snp_order = random.sample(snp_order, len(snp_order))
-            self.geno = [0]*len(snp_order)
-            snp_order1 = [i for i in snp_order if i<len(snp_order)/2.0]
-            snp_order2 = [i for i in snp_order if i>=len(snp_order)/2.0]
+            # create phenotypes
+            for i in range(len(self.pheno)):
+                # self.pheno[i] += gg * snp.beta[i]
+                # self.pheno_sum[i] += gg * snp.beta[i]
+                self.pheno[i] += g * snp.beta[i]
+                #self.pheno_sum[i] += g * snp.beta[i]
+        # add error term
+        """
+        h0sqrd,h1sqrd = calc_heritability(snp_props)
+        e0 = np.random.normal(loc=0.0,scale=math.sqrt(1-h0sqrd))
+        e1 = np.random.normal(loc=0.0,scale=math.sqrt(1-h1sqrd))
+        self.pheno = [x+y for x,y in zip(self.pheno,[e0,e1])]
+        """
 
-            h1sq,h2sq = calc_heritability(snp_props)
-            remaining_herit1 = 1.0
-            current_sum1 = 0.0
-            
-            for i in snp_order1:
-                beta = snp_props[i].beta[0]
-                p = snp_props[i].p
-                if case1:
-                    # generate posterior for SNP, choices are {0,1,2}
-                    current_sum1 = 0.0
-                    remaining_herit1 = 1.0
-                    remaining_herit1 -= beta**2 * 2 * 2 * p * (1.0-p)
-                    prob0 = norm.cdf((current_sum1 + 0.0*beta - thres)/np.sqrt(remaining_herit1)) * (1.0-p)**2
-                    prob1 = norm.cdf((current_sum1 + 1.0*beta - thres)/np.sqrt(remaining_herit1)) * 2*p*(1.0-p)
-                    prob2 = norm.cdf((current_sum1 + 2.0*beta - thres)/np.sqrt(remaining_herit1)) * p**2
-                else:
-                    prob0 = (1.0-p)**2
-                    prob1 = 2*p*(1.0-p)
-                    prob2 = p**2
-                probs = [prob0, prob1, prob2]
-                probs = [x/sum(probs) for x in probs]
-                # self.geno[i] = np.random.choice(np.arange(0,3), p=probs)
-                pp = random.random()
-                if pp < probs[2]:
-                    g = 2.0
-                elif pp < probs[2] + probs[1]:
-                    g = 1.0
-                else:
-                    g = 0.0
-                self.geno[i] = g
-                current_sum1 += self.geno[i] * beta
-            self.pheno[0] = current_sum1
+class IndividualHetero(object):
+    def __init__(self,snp_props,sample_posterior=False,case1=False,case2=False,thres=2.0):
+        assert len(snp_props)>0
+        self.geno = [] # {0,1,2}
+        #self.geno_mean0 = [] # adjusted to mean 0
+        self.pheno = [0.0] * len(snp_props[0].beta)
+        alt_pheno_2 = 0.0
+        self.is_alt = False
+        #self.pheno_sum = [0.0] * len(snp_props[0].beta)
 
-            remaining_herit2 = 1.0
-            current_sum2 = 0.0
-            for i in snp_order2:
-                beta = snp_props[i].beta[1]
-                p = snp_props[i].p
-                if case2:
-                    # generate posterior for SNP, choices are {0,1,2}
-                    remaining_herit2 -= beta**2 * 2 * p * (1.0-p)
-                    prob0 = norm.cdf((current_sum2 + 0.0*beta - thres)/np.sqrt(remaining_herit2)) * (1.0-p)**2
-                    prob1 = norm.cdf((current_sum2 + 1.0*beta - thres)/np.sqrt(remaining_herit2)) * 2*p*(1.0-p)
-                    prob2 = norm.cdf((current_sum2 + 2.0*beta - thres)/np.sqrt(remaining_herit2)) * p**2
-                else:
-                    prob0 = (1.0-p)**2
-                    prob1 = 2*p*(1.0-p)
-                    prob2 = p**2
-                probs = [prob0, prob1, prob2]
-                probs = [x/sum(probs) for x in probs]
+        # sample SNPs according to SNP props
+        for snp in snp_props:
+            p = snp.p          
+            pp = random.random()
+            if pp < p**2.0:
+                g = 2.0
+            elif pp < p**2.0 + 2.0*p*(1.0-p):
+                g = 1.0
+            else:
+                g = 0.0
+            self.geno.append(g)
+            #gg = g - 2*p
+            #gg /= math.sqrt(2*p*(1-p))
+            #self.geno_mean0.append(gg)
 
-                #self.geno[i] = np.random.choice(np.arange(0,3), p=probs)
-                pp = random.random()
-                if pp < probs[2]:
-                    g = 2.0
-                elif pp < probs[2] + probs[1]:
-                    g = 1.0
-                else:
-                    g = 0.0
-                self.geno[i] = g
-                current_sum2 += self.geno[i] * beta
-            self.pheno[1] = current_sum2
-            
+            # create phenotypes
+            self.pheno[0] += g * snp.beta[0]
+            self.pheno[1] += g * snp.beta[1]
+            alt_pheno_2 += g * (snp.beta[0] * np.random.normal(loc=1.0))
+        
+        if alt_pheno_2 > self.pheno[1]:
+            self.pheno[1] = alt_pheno_2
+            self.is_alt = True
+        # add error term
+        """
+        h0sqrd,h1sqrd = calc_heritability(snp_props)
+        e0 = np.random.normal(loc=0.0,scale=math.sqrt(1-h0sqrd))
+        e1 = np.random.normal(loc=0.0,scale=math.sqrt(1-h1sqrd))
+        self.pheno = [x+y for x,y in zip(self.pheno,[e0,e1])]
+        """
 
-        else:
-            # sample SNPs according to SNP props
-            for snp in snp_props:
-                p = snp.p          
-                pp = random.random()
-                if pp < p**2.0:
-                    g = 2.0
-                elif pp < p**2.0 + 2.0*p*(1.0-p):
-                    g = 1.0
-                else:
-                    g = 0.0
-                self.geno.append(g)
-                #gg = g - 2*p
-                #gg /= math.sqrt(2*p*(1-p))
-                #self.geno_mean0.append(gg)
-
-                # create phenotypes
-                for i in range(len(self.pheno)):
-                    # self.pheno[i] += gg * snp.beta[i]
-                    # self.pheno_sum[i] += gg * snp.beta[i]
-                    self.pheno[i] += g * snp.beta[i]
-                    #self.pheno_sum[i] += g * snp.beta[i]
-            # add error term
-            """
-            h0sqrd,h1sqrd = calc_heritability(snp_props)
-            e0 = np.random.normal(loc=0.0,scale=math.sqrt(1-h0sqrd))
-            e1 = np.random.normal(loc=0.0,scale=math.sqrt(1-h1sqrd))
-            self.pheno = [x+y for x,y in zip(self.pheno,[e0,e1])]
-            """
+def generate_population_hetero(snp_props, num_inds=10000):
+    inds = []
+    for i in range(int(num_inds)):
+        inds.append(IndividualHetero(snp_props))
+    return inds
+    
 
 def generate_population(snp_props, num_inds=10000):
     inds = []
     for i in range(int(num_inds)):
         inds.append(Individual(snp_props))
     return inds
+
+def alex_plot():
+    snp_props_independent = generate_pss_model(num_snps=[100, 0, 0, 100])
+    independent_pop = generate_population(snp_props_independent)
+    plot_inds(independent_pop)
+    
+    snp_props_pleiotropic = generate_pss_model(num_snps=[50, 100, 0, 50])
+    pleiotropic_pop = generate_population(snp_props_pleiotropic)
+    plot_inds(pleiotropic_pop)
+    
+    hetero_pop = generate_population_hetero(snp_props_independent)
+    plot_inds(hetero_pop)    
+    
+def plot_inds(inds):
+    alts = filter(lambda i: i.is_alt, inds)
+    normies = filter(lambda i: not i.is_alt, inds)
+    plot_inds_helper(normies, "b.")
+    if len(alts) > 0:
+        plot_inds_helper(alts, "r.")
+    plt.show()
+    
+def plot_inds_helper(inds, label):
+    phenos = map(lambda i: i.pheno, inds)
+    phen1, phen2 = zip(*phenos)
+    plt.plot(phen1, phen2, label)
+    
 
 
 def generate_cc_hl2(snp_props,num_cases=15000,pi_prop=0.5,num_controls=15000,thresh=2.0,verbose=True):
@@ -374,4 +376,5 @@ def main():
     sys.exit(0)
 
 if __name__=="__main__":
-    main()
+    #main()
+    pass

@@ -19,17 +19,18 @@ class SNP():
         self.p=p
         self.beta=beta
     def __str__(self):
-        return "SNP p:%.4f beta:" % (self.p) + \
+        return "SNP %s p:%.4f beta:" % (self.name, self.p) + \
                 ",".join(["%.4f"]*len(self.beta)) % tuple(self.beta)
 
-def generate_pss_model(num_phenos=2, nsnps=50, eff_size=0.1, eff_afreq=0.5):
+def generate_pss_model(num_phenos=2, nsnps=50, eff_size=0.1, eff_afreq=0.5, num_snps=None):
     snp_props = []
 
     p_low=eff_afreq
     p_high=eff_afreq
     b_loc = eff_size
     b_scale = 0.0 # no distribution: just take the mean every time  
-    num_snps = [nsnps/2, 0, 0, nsnps/2]
+    if num_snps is None:
+        num_snps = [nsnps/2, 0, 0, nsnps/2]
     
     name_counter = 0
     # snps affecting only trait1
@@ -53,7 +54,7 @@ def generate_pss_model(num_phenos=2, nsnps=50, eff_size=0.1, eff_afreq=0.5):
         beta[1] = np.random.normal(loc=b_loc,scale=b_scale)
         if beta[1] < 0:
             beta[1] *= -1
-        snp_props.append("BOTH-"+str(name_counter),SNP(p,beta))
+        snp_props.append(SNP("BOTH-"+str(name_counter),p,beta))
         name_counter += 1
 
     # snps affecting neither trait1 nor trait2
@@ -97,9 +98,16 @@ def plot_snp_props(snp_props):
     plt.xlabel('Effect Allele Frequency')
     plt.ylabel('Beta')
     plt.show()
-    
+
+def print_snp_props(snp_props):
+    mystr = "[\n"
+    for snp in snp_props:
+        mystr += "  " + str(snp) + "\n"
+    mystr += "]"
+    print mystr
+
 def main():
-    snp_props, c = generate_pss_model(num_phenos=2)
+    snp_props = generate_pss_model(num_phenos=2)
     t1,t2 = calc_heritability(snp_props)
     print t1,t2
     plot_snp_props(snp_props)
