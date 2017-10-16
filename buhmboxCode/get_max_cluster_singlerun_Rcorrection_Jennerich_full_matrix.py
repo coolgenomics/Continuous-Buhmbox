@@ -127,18 +127,23 @@ def vectorize(clist,indices):
     return [1 if i in clist else 0 for i in indices]
     
 def buhmbox(cases,controls,clist,snp_props):
+    """
+    cases, controls: Numpy array where each row is an indiv and each col is a snp
+    clist: tuple of indices that are the snps for DB
+    snp_props: 
+    """
     num_snps = len(clist)
     snp_cases = cases[:,clist]
     snp_controls = controls[:,clist]
 
-    R_expected = expected_corr(snp_props,clist)
+    #R_expected = expected_corr(snp_props,clist)
 
     N = float(len(snp_cases))
     Np = float(len(snp_controls))
     R = np.corrcoef(snp_cases.T)
     Rp = np.corrcoef(snp_controls.T)
-    #Y = np.sqrt(N*Np/(N+Np)) * (R-Rp)
-    Y = np.sqrt(N*Np/(N+Np)) * (R-R_expected)
+    Y = np.sqrt(N*Np/(N+Np)) * (R-Rp)
+    #Y = np.sqrt(N*Np/(N+Np)) * (R-R_expected)
     
     pi_cases = []
     pi_controls = []
@@ -177,6 +182,11 @@ def buhmbox(cases,controls,clist,snp_props):
     return SBB
 
 def heterogeneity(cases,controls,clist,snp_props):
+    print("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+    print cases
+    print controls
+    print clist
+    print snp_props
     num_snps = len(clist)
     snp_cases = cases[:,clist]
     snp_controls = controls[:,clist]
@@ -227,6 +237,11 @@ def heterogeneity(cases,controls,clist,snp_props):
     return SBB
 
 def heterogeneity_jennerich(cases,controls,clist,snp_props):
+    print("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
+    print cases
+    print controls
+    print clist
+    print snp_props
 
     # Remove correlation from SNPs not in the current set,
     # but include correlations between from in-SNP and out-SNP
