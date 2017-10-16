@@ -126,6 +126,56 @@ def greedy_search(num_inds=10000,num_snps=100,eff_size=0.1):
 def vectorize(clist,indices):
     return [1 if i in clist else 0 for i in indices]
     
+def buhmbox(cases,controls,clist,snp_props):
+    num_snps = len(clist)
+    snp_cases = cases[:,clist]
+    snp_controls = controls[:,clist]
+
+    R_expected = expected_corr(snp_props,clist)
+
+    N = float(len(snp_cases))
+    Np = float(len(snp_controls))
+    R = np.corrcoef(snp_cases.T)
+    Rp = np.corrcoef(snp_controls.T)
+    #Y = np.sqrt(N*Np/(N+Np)) * (R-Rp)
+    Y = np.sqrt(N*Np/(N+Np)) * (R-R_expected)
+    
+    pi_cases = []
+    pi_controls = []
+    gamma_i = []
+    for i in range(num_snps):
+        pi_case = np.sum(snp_cases[:,i]) / (2*snp_cases.shape[0])
+        pi_cases.append(pi_case)
+        pi_control = np.sum(snp_controls[:,i]) / (2*snp_controls.shape[0])
+        pi_controls.append(pi_control)
+        gamma_i.append( pi_case/(1-pi_case) / (pi_control/(1-pi_control)) )
+    
+    # calculate SBB
+    numer = 0.0
+    denom = 0.0
+    for i in range(num_snps):
+        for j in range(i+1,num_snps):
+            wij = np.sqrt(pi_controls[i]*(1-pi_controls[i])*pi_controls[j]*(1-pi_controls[j])) \
+                    * (gamma_i[i]-1) * (gamma_i[j] - 1) \
+                    / (pi_controls[i]*(gamma_i[i]-1) + 1) / (pi_controls[j]*(gamma_i[j]-1) + 1)
+            yij = Y[i,j]
+            numer += wij * yij
+            denom += wij * wij
+    if not denom > 0.0:
+        print "error: denominator 0"      
+        print num_snps
+        for i in range(num_snps):
+            print gamma_i[i]
+            for j in range(i+1,num_snps):
+                wij = np.sqrt(pi_controls[i]*(1-pi_controls[i])*pi_controls[j]*(1-pi_controls[j])) \
+                        * (gamma_i[i]-1) * (gamma_i[j] - 1) \
+                        / (pi_controls[i]*(gamma_i[i]-1) + 1) / (pi_controls[j]*(gamma_i[j]-1) + 1)
+                print wij
+        sys.exit(1)
+
+    SBB = numer / np.sqrt(denom)
+    return SBB
+
 def heterogeneity(cases,controls,clist,snp_props):
     num_snps = len(clist)
     snp_cases = cases[:,clist]

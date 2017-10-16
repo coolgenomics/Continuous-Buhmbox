@@ -18,7 +18,7 @@ from sklearn.preprocessing import normalize
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 
-from generate_snps import generate_pss_model, calc_heritability, generate_pss_model_generalized
+from generate_snps import generate_pss_model, calc_heritability, generate_pss_model_generalized, print_snp_props
 
 class Individual(object):
     def __init__(self, snp_props):
@@ -392,16 +392,15 @@ def main2():
     independent_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps], [num_snps, 0]]))
     pleiotropy_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps/2], [num_snps/2, num_snps/2]]))
     b = np.zeros(8).reshape((2, 2, 2))
-    b[0, 1, 0] = num_snps/2
-    b[0, 0, 1] = num_snps/2
-    b[0, 1, 1] = num_snps/2
-    b[1, 0, 0] = num_snps
+    b[1, 0, 0] = num_snps/4
+    b[0, 0, 1] = num_snps/4
+    b[1, 0, 1] = num_snps*3/4
+    b[0, 1, 0] = num_snps
     hetero_snps = generate_pss_model_generalized(num_phenos=3, num_snps=b)
     
     independent_pop = generate_population(independent_snps, num_inds=num_inds)
     pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds)
     hetero_pop = generate_population_hetero(hetero_snps, num_inds=num_inds)
-    print hetero_pop[0].pheno
     
     plot_inds(independent_pop)
     plot_inds(pleiotropic_pop)
