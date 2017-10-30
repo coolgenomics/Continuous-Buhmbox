@@ -25,7 +25,7 @@ import pickle, sys, itertools, random
 import numpy as np
 from numpy.linalg import inv
 from matplotlib import pyplot as plt
-from scipy.stats import norm, chi2
+from scipy.stats import norm, chi2, rankdata
 from pprint import pprint
 from generate_snps import generate_pss_model, calc_heritability
 from generate_population import generate_cc_hl2, generate_direct_cases, \
@@ -175,6 +175,70 @@ def buhmbox(cases,controls,clist,snp_props):
                 wij = np.sqrt(pi_controls[i]*(1-pi_controls[i])*pi_controls[j]*(1-pi_controls[j])) \
                         * (gamma_i[i]-1) * (gamma_i[j] - 1) \
                         / (pi_controls[i]*(gamma_i[i]-1) + 1) / (pi_controls[j]*(gamma_i[j]-1) + 1)
+                print wij
+        sys.exit(1)
+
+    SBB = numer / np.sqrt(denom)
+    return SBB
+
+def get_weights(phenos):
+    percentiles = (rankdata(phenos) - 1) / len(phenos)
+    weights = -np.log(1 - percentiles)
+    return weights / np.sum(weights)
+
+def corr(x, w):
+    """Weighted Correlation"""
+    c = np.cov(x, aweights=w)
+    d = np.diag(np.diag(c) ** -0.5)
+    return np.dot(np.dot(d, c), d)
+
+def continuous_buhmbox(genos, phenos, clist,snp_props):
+    """
+    cases, controls: Numpy array where each row is an indiv and each col is a snp
+    clist: tuple of indices that are the snps for DB
+    snp_props: 
+    """
+    num_snps = len(clist)
+    snp_indivs = genos[:,clist]
+    weights = get_weights(phenos)
+    
+    N = len(genos)
+    w2 = np.sum(weights ** 2)
+    R = corr(snp_indivs.T, weights)
+    Rp = np.corrcoef(snp_indivs.T)
+    Y = np.sqrt(1/(1/N + w2)) * (R-Rp)
+    #Y = np.sqrt(N*Np/(N+Np)) * (R-R_expected)
+    
+    pi_pluses = []
+    pi_minuses = []
+    gamma_i = []
+    for i in range(num_snps):
+        pi_plus = np.sum(snp_indivs[:,i] * weights) / 2
+        pi_minus = np.sum(snp_indivs[:,i]) / (2*snp_indivs.shape[0])
+        pi_pluses.append(pi_plus)
+        pi_minuses.append(pi_minus)
+        gamma_i.append( pi_plus/(1-pi_plus) / (pi_minus/(1-pi_minus)) )
+    
+    # calculate SBB
+    numer = 0.0
+    denom = 0.0
+    for i in range(num_snps):
+        for j in range(i+1,num_snps):
+            wij = np.sqrt(pi_minuses[i]*(1-pi_minuses[i])*pi_minuses[j]*(1-pi_minuses[j])) \
+                    * (gamma_i[i]-1) * (gamma_i[j] - 1) \
+                    / (pi_minuses[i]*(gamma_i[i]-1) + 1) / (pi_minuses[j]*(gamma_i[j]-1) + 1)
+            yij = Y[i,j]
+            numer += wij * yij
+            denom += wij * wij
+    if not denom > 0.0:
+        print "error: denominator 0"      
+        print num_snps
+        for i in range(num_snps):
+            print gamma_i[i]
+            for j in range(i+1,num_snps):
+                wij = np.sqrt(pi_minuses[i]*(1-pi_minuses[i])*pi_minuses[j]*(1-pi_minuses[j])) \
+                        * (gamma_i[i]-1) * (gamma_i[j] - 1) \
+                        / (pi_minuses[i]*(gamma_i[i]-1) + 1) / (pi_minuses[j]*(gamma_i[j]-1) + 1)
                 print wij
         sys.exit(1)
 

@@ -1,0 +1,45 @@
+\documentclass[11pt]{hw-template}
+
+\usepackage{enumitem}
+%\usepackage{graphicx}
+%\usepackage{mathtools}
+%\lstset{showstringspaces=false}
+%\setlength\parindent{0pt}
+
+\coursename{Continuous Buhmbox Formulation} % DON'T CHANGE THIS
+
+\studname{Alexandre Lamy}
+\studmail{all2187@columbia.edu}
+\hwNo{}
+\collab{}
+
+\begin{document}
+\maketitle
+
+\section*{Buhmbox generalization to continuous phenotypes - no cases and controls}
+
+\noindent Assuming normalized weights ($\sum \omega_i = 1$), we define the weighted mean as:
+$$m(x, \omega) = \sum_i \omega_i x_i$$
+The weighted covariance as:
+$$cov(x, y, \omega) = \sum_i w_i(x_i - m(x, \omega))(y_i - m(y, \omega))$$
+Finally we have that the weighted correlation is given by:
+$$corr(x, y, \omega) = \frac{cov(x, y, \omega)}{\sqrt{cov(x, x, \omega)cov(y, y, \omega)}}$$
+
+Assume we are given $N$ data points (each data point corresponds to an individual's SNPs, $x_i \in \R$, and his phenotype, $y_i \in \R$). We have to further assume that the sample is 
+representative of the population.
+
+We then use $w_i = -log(1-\rho_i)$ where $\rho_i$ is the percentile of data point $x_i's$ phenotype (and then normalize the $w_i$'s to have $\sum w_i = 1$). We also let $R$ be the weighted
+covariance matrix and $R'$ be the unweighted covariance matrix.
+Then we use:
+$$ Y = \frac{1}{\sqrt{\frac{1}{N} + \sum \omega_i^2}} (R-R')$$
+
+$$S_\text{BUHMBOX} = \frac{\sum_{i < j} w_{ij}y_{ij}}{\sqrt{\sum_{i<j}w_{ij}^2}}$$
+
+Where we have
+$$w_{ij} = \frac{\sqrt{p_i(1-p_i)p_j(1-p_j)}(\gamma_i - 1)(\gamma_j - 1)}{((\gamma_i-1)p_i + 1)((\gamma_j - 1)p_j + 1)}$$
+
+Where $p_i$ is the RAF of SNP $i$ and $\gamma_i$ is given by:
+$\gamma_i = \frac{(p_i^+)(1-p_i^+)}{(p_i^-)(1-p_i^-)}$ where $p_i^+$ is the weighted sample RAF (using $\omega$ weights) and $p_i^-$ is the unweighted sample RAF.
+%%%%%%%%%%%%%%%%%
+
+\end{document} 
