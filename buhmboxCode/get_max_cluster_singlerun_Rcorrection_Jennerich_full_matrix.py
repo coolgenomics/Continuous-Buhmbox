@@ -181,6 +181,37 @@ def buhmbox(cases,controls,clist,snp_props):
     SBB = numer / np.sqrt(denom)
     return SBB
 
+def buhmbox_vectorized(cases,controls,clist,snp_props):
+    """
+    cases, controls: Numpy array where each row is an indiv and each col is a snp
+    clist: tuple of indices that are the snps for DB
+    snp_props: 
+    """
+    num_snps = len(clist)
+    snp_cases = cases[:,clist]
+    snp_controls = controls[:,clist]
+
+    N = float(len(snp_cases))
+    Np = float(len(snp_controls))
+    R = np.corrcoef(snp_cases.T)
+    Rp = np.corrcoef(snp_controls.T)
+    Y = np.sqrt(N*Np/(N+Np)) * (R-Rp)
+    
+    pi_cases = np.sum(snp_cases, axis=0) / (2*snp_cases.shape[0])
+    pi_controls = np.sum(snp_controls, axis=0) / (2*snp_controls.shape[0])
+    gamma = pi_cases/(1-pi_cases) / (pi_controls/(1-pi_controls))
+    
+    # calculate SBB
+    elem1 = np.sqrt(pi_controls*(1-pi_controls))
+    elem2 = gamma-1
+    elem3 = elem2 * pi_controls + 1
+    mat1 = np.sqrt(np.dot(elem1.reshape((num_snps, 1)), elem1.reshape((1, num_snps))))
+    mat2 = np.dot(elem2.reshape((num_snps, 1)), elem2.reshape((1, num_snps)))
+    mat3 = np.dot(elem3.reshape((num_snps, 1)), elem3.reshape((1, num_snps)))
+    w = mat1 * mat2 / mat3
+    SBB = np.sum(np.triu(w*Y, k=1)) / np.sqrt(np.sum(np.triu(w ** 2, k=1)))
+    return SBB
+
 def get_weights(phenos):
     percentiles = (rankdata(phenos) - 1) / len(phenos)
     weights = -np.log(1 - percentiles)
@@ -243,6 +274,38 @@ def continuous_buhmbox(genos, phenos, clist,snp_props):
         sys.exit(1)
 
     SBB = numer / np.sqrt(denom)
+    return SBB
+
+def continuous_buhmbox_vect(genos, phenos, clist,snp_props):
+    """
+    cases, controls: Numpy array where each row is an indiv and each col is a snp
+    clist: tuple of indices that are the snps for DB
+    snp_props: 
+    """
+    num_snps = len(clist)
+    snp_indivs = genos[:,clist]
+    num_indivs = snp_indivs.shape[0]
+    weights = get_weights(phenos)
+    
+    N = len(genos)
+    w2 = np.sum(weights ** 2)
+    R = corr(snp_indivs.T, weights)
+    Rp = np.corrcoef(snp_indivs.T)
+    Y = np.sqrt(1/(1/N + w2)) * (R-Rp)
+    
+    pi_plus = np.sum(snp_indivs * weights.reshape((num_indivs, 1)), axis=0) / 2
+    pi_minus = np.sum(snp_indivs, axis=0) / (2*num_indivs)
+    gamma = pi_plus/(1-pi_plus) / (pi_minus/(1-pi_minus))
+    
+    # calculate SBB
+    elem1 = np.sqrt(pi_minus*(1-pi_minus))
+    elem2 = gamma-1
+    elem3 = elem2 * pi_minus + 1
+    mat1 = np.sqrt(np.dot(elem1.reshape((num_snps, 1)), elem1.reshape((1, num_snps))))
+    mat2 = np.dot(elem2.reshape((num_snps, 1)), elem2.reshape((1, num_snps)))
+    mat3 = np.dot(elem3.reshape((num_snps, 1)), elem3.reshape((1, num_snps)))
+    w = mat1 * mat2 / mat3
+    SBB = np.sum(np.triu(w*Y, k=1)) / np.sqrt(np.sum(np.triu(w ** 2, k=1)))
     return SBB
 
 def heterogeneity(cases,controls,clist,snp_props):

@@ -112,6 +112,58 @@ def generate_population(snp_props, num_inds=10000):
         inds.append(Individual(snp_props))
     return inds
 
+def generate_hetero_population_vect(snps, num_inds=10000):
+    """
+    snps=[snp_ps, snp_betas]
+    snp_ps: numpy length num_snps array with rafs
+    snp_betas: numpy (num_snps, num phenos) matrix with betas
+    """
+    snp_ps, snp_betas = snps
+    assert len(snp_ps) == len(snp_betas)
+    num_snps = len(snp_ps)
+    assert num_snps > 0
+    num_phenos = len(snp_betas[0])
+
+    # sample SNPs according to SNP props
+    randoms = np.random.rand(num_inds, num_snps, 1)
+    snp_ps_all = np.repeat(snp_ps.reshape(1, num_snps, 1), num_inds, axis=0)
+    geno = (randoms < snp_ps_all**2.0).astype(float) + (randoms < snp_ps_all**2.0 + 2.0*snp_ps_all*(1.0-snp_ps_all)).astype(float)
+    assert geno.shape == (num_inds, num_snps, 1)
+    betas_all = np.repeat(snp_betas.reshape(1, num_snps, num_phenos), num_inds, axis=0)
+    pheno = np.sum(np.repeat(geno, num_phenos, axis=2) * betas_all, axis=1)
+    assert pheno.shape == (num_inds, num_phenos)
+    
+    alts = pheno[:, -1] > pheno[:, -2]
+    alts_float = alts.astype(float)
+    new_pheno = (pheno[:, -1] * alts_float) + (pheno[:, -2] * (1 - alts_float))
+    real_phenos = np.hstack((pheno[:, :-2], new_pheno.reshape(num_inds, 1)))
+    return geno.reshape(num_inds, num_snps), real_phenos, alts
+
+def generate_population_vect(snps, num_inds=10000):
+    """
+    snps=[snp_ps, snp_betas]
+    snp_ps: numpy length num_snps array with rafs
+    snp_betas: numpy (num_snps, num phenos) matrix with betas
+    """
+    snp_ps, snp_betas = snps
+    assert len(snp_ps) == len(snp_betas)
+    num_snps = len(snp_ps)
+    assert num_snps > 0
+    num_phenos = len(snp_betas[0])
+
+    # sample SNPs according to SNP props
+    randoms = np.random.rand(num_inds, num_snps, 1)
+    snp_ps_all = np.repeat(snp_ps.reshape(1, num_snps, 1), num_inds, axis=0)
+    geno = (randoms < snp_ps_all**2.0).astype(float) + (randoms < snp_ps_all**2.0 + 2.0*snp_ps_all*(1.0-snp_ps_all)).astype(float)
+    assert geno.shape == (num_inds, num_snps, 1)
+    betas_all = np.repeat(snp_betas.reshape(1, num_snps, num_phenos), num_inds, axis=0)
+    pheno = np.sum(np.repeat(geno, num_phenos, axis=2) * betas_all, axis=1)
+    assert pheno.shape == (num_inds, num_phenos)
+    
+    return geno.reshape(num_inds, num_snps), pheno, np.zeros(num_inds)
+    
+    
+    
 def alex_plot():
     snp_props_independent = generate_pss_model(num_snps=[100, 0, 0, 100])
     independent_pop = generate_population(snp_props_independent)

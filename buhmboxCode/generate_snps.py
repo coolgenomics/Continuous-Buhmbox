@@ -45,6 +45,27 @@ def generate_pss_model_generalized(num_phenos=2, eff_size=0.1, eff_afreq=0.5,num
         name_counter += 1
     return snp_props
 
+def generate_pss_model_generalized_vect(num_phenos=2, eff_size=0.1, eff_afreq=0.5,num_snps=np.array([[0, 50], [50, 0]])):
+    all_ps = []
+    all_betas = []
+
+    p_low=eff_afreq
+    p_high=eff_afreq
+    b_loc = eff_size
+    b_scale = 0.0 # no distribution: just take the mean every time  
+    
+    if num_snps.shape != tuple([2] * num_phenos):
+        raise ValueError("Invalid num_snps passed to generate_pss_model_generalized")
+    
+    for index, val in np.ndenumerate(num_snps):
+        name_counter = 0
+        n = int(val)
+        p = np.random.uniform(low=p_low,high=p_high, size=n)
+        beta = np.random.normal(loc=b_loc,scale=b_scale, size=(n, num_phenos)) * np.array(index).reshape(1, num_phenos)
+        all_ps.append(p)
+        all_betas.append(beta)
+    return np.hstack(all_ps), np.vstack(all_betas)
+
 def generate_pss_model(num_phenos=2, nsnps=50, eff_size=0.1, eff_afreq=0.5,num_snps=None):
     snp_props = []
 
