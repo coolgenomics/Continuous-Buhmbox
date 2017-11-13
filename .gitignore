@@ -1,2 +1,6 @@
 .python-version
 *.pyc
+*.aux
+*.log
+*.pickle
+*.npz
