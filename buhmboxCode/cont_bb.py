@@ -28,34 +28,36 @@ def generate_pss_model_generalized(num_phenos=2, eff_size=0.1, eff_afreq=0.5,num
         all_betas.append(beta)
     return np.hstack(all_ps), np.vstack(all_betas)
 
-def generate_hetero_population(snps, num_inds=10000):
+def calc_var_from_geno(snp_props):
+    snp_ps, snp_betas = snp_props
+    num_snps, num_phenos = snp_betas.shape
+    snp_ps_all = np.repeat(snp_ps.reshape(num_snps, 1), num_phenos, axis=1)
+    return np.sum(snp_betas**2 * 2 * snp_ps_all * (1 - snp_ps_all), axis=0)
+
+def calc_pop_var(pop):
+    _, phenos, _ = pop
+    return np.var(phenos, axis=0)
+
+def calc_pop_gen_var(pop, snp_props):
+    snp_ps, snp_betas = snp_props
+    genos, phenos, _ = pop
+    return np.var(np.dot(genos, snp_betas), axis=0)
+
+def generate_hetero_population(snps, num_inds=10000, h=1):
     """
     snps=[snp_ps, snp_betas]
     snp_ps: numpy length num_snps array with rafs
     snp_betas: numpy (num_snps, num phenos) matrix with betas
     """
-    snp_ps, snp_betas = snps
-    assert len(snp_ps) == len(snp_betas)
-    num_snps = len(snp_ps)
-    assert num_snps > 0
-    num_phenos = len(snp_betas[0])
-
-    # sample SNPs according to SNP props
-    randoms = np.random.rand(num_inds, num_snps, 1)
-    snp_ps_all = np.repeat(snp_ps.reshape(1, num_snps, 1), num_inds, axis=0)
-    geno = (randoms < snp_ps_all**2.0).astype(float) + (randoms < snp_ps_all**2.0 + 2.0*snp_ps_all*(1.0-snp_ps_all)).astype(float)
-    assert geno.shape == (num_inds, num_snps, 1)
-    betas_all = np.repeat(snp_betas.reshape(1, num_snps, num_phenos), num_inds, axis=0)
-    pheno = np.sum(np.repeat(geno, num_phenos, axis=2) * betas_all, axis=1)
-    assert pheno.shape == (num_inds, num_phenos)
+    geno, pheno, _ = generate_population(snps, num_inds=num_inds, h=h)
     
     alts = pheno[:, -1] > pheno[:, -2]
     alts_float = alts.astype(float)
     new_pheno = (pheno[:, -1] * alts_float) + (pheno[:, -2] * (1 - alts_float))
     real_phenos = np.hstack((pheno[:, :-2], new_pheno.reshape(num_inds, 1)))
-    return geno.reshape(num_inds, num_snps), real_phenos, alts
+    return geno, real_phenos, alts
 
-def generate_population(snps, num_inds=10000):
+def generate_population(snps, num_inds=10000, h=1):
     """
     snps=[snp_ps, snp_betas]
     snp_ps: numpy length num_snps array with rafs
@@ -75,8 +77,11 @@ def generate_population(snps, num_inds=10000):
     betas_all = np.repeat(snp_betas.reshape(1, num_snps, num_phenos), num_inds, axis=0)
     pheno = np.sum(np.repeat(geno, num_phenos, axis=2) * betas_all, axis=1)
     assert pheno.shape == (num_inds, num_phenos)
-    
-    return geno.reshape(num_inds, num_snps), pheno, np.zeros(num_inds)
+    geno = geno.reshape(num_inds, num_snps)
+    genetic_var = calc_var_from_geno(snps)
+    sigma = np.sqrt((1-h)/h * genetic_var)
+    pheno = pheno + np.random.normal(loc=np.zeros(num_phenos), scale=sigma, size=(num_inds, num_phenos))
+    return geno, pheno, np.zeros(num_inds)
 
 def buhmbox(cases,controls,clist,snp_props):
     """
@@ -175,7 +180,7 @@ def run_buhmbox_on_pop(pop, snps, snp_phens=0, case_phen=1, z=1.5):
     #print clist
     #print_snp_props([independent_snps[i] for i in clist])
     #print len(clist)
-    return buhmbox(cases, controls_sub, clist, snps)
+    return buhmbox(cases, controls, clist, snps)
 
 def run_cont_buhmbox_on_pop(pop, snps, snp_phens=0, case_phen=1):
     genos, phenos, _ = pop
@@ -185,7 +190,7 @@ def run_cont_buhmbox_on_pop(pop, snps, snp_phens=0, case_phen=1):
     #print len(clist)
     return continuous_buhmbox(genos, phenos[:, case_phen], clist, snps)
 
-def main3(file_path, runs=1, num_snps=100, num_inds=100000):
+def main3(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
     start = time.time()
     independent_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps], [num_snps, 0]]))
     pleiotropy_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps/2], [num_snps/2, num_snps/2]]))
@@ -203,10 +208,10 @@ def main3(file_path, runs=1, num_snps=100, num_inds=100000):
     pc = []
     hc = []
     for i in range(0, runs):    
-        independent_pop = generate_population(independent_snps, num_inds=num_inds)
-        pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds)
-        hetero_pop = generate_hetero_population(hetero_snps, num_inds=num_inds)
-
+        independent_pop = generate_population(independent_snps, num_inds=num_inds, h=h)
+        pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds, h=h)
+        hetero_pop = generate_hetero_population(hetero_snps, num_inds=num_inds, h=h)
+        
         '''
         plot_inds(independent_pop)
         plot_inds(pleiotropic_pop)
@@ -228,21 +233,63 @@ def main3(file_path, runs=1, num_snps=100, num_inds=100000):
         pickle.dump(info, f)
     print(time.time()-start)
 
+def main4(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
+    start = time.time()
+    independent_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps], [num_snps, 0]]))
+    pleiotropy_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps/2], [num_snps/2, num_snps/2]]))
+    b = np.zeros(8).reshape((2, 2, 2))
+    b[1, 0, 0] = num_snps/4
+    b[0, 0, 1] = num_snps/4
+    b[1, 0, 1] = num_snps*3/4
+    b[0, 1, 0] = num_snps
+    hetero_snps = generate_pss_model_generalized(num_phenos=3, num_snps=b)
+    
+    points = {"ib": [], "pb": [], "hb": [], "ic": [], "pc": [], "hc": []}
+    for h in (1, 0.5, 0.3, 0.2, 0.15, 0.1, 0.05):
+        ib = []
+        pb = []
+        hb = []
+        ic = []
+        pc = []
+        hc = []
+        for i in range(0, runs):    
+            independent_pop = generate_population(independent_snps, num_inds=num_inds, h=h)
+            pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds, h=h)
+            hetero_pop = generate_hetero_population(hetero_snps, num_inds=num_inds, h=h)
+            
+            '''
+            plot_inds(independent_pop)
+            plot_inds(pleiotropic_pop)
+            plot_inds(hetero_pop)
+            plot_inds_alts(hetero_pop)
+            '''
+
+            ib.append(run_buhmbox_on_pop(independent_pop, independent_snps))
+            pb.append(run_buhmbox_on_pop(pleiotropic_pop, pleiotropy_snps))
+            hb.append(run_buhmbox_on_pop(hetero_pop, hetero_snps))
+            ic.append(run_cont_buhmbox_on_pop(independent_pop, independent_snps))
+            pc.append(run_cont_buhmbox_on_pop(pleiotropic_pop, pleiotropy_snps))
+            hc.append(run_cont_buhmbox_on_pop(hetero_pop, hetero_snps))
+        for arr, name in ((ib, "ib"), (pb, "pb"), (hb, "hb"), (ic, "ic"), (pc, "pc"), (hc, "hc")):
+            points[name].append((h, np.mean(arr), np.std(arr)))
+        print h
+    with open(file_path, "wb") as f:
+        pickle.dump(points, f)
+    print(time.time()-start)
+
 def print_info(file_path):
     with open(file_path, "rb") as f:
-        arrs, means, stds = pickle.load(f)
-    for arr in arrs:
-        print(arr)
-    for mean in means:
-        print(mean)
-    for std in stds:
-        print(std)
+        points = pickle.load(f)
+    for name in points:
+        print name + ":"
+        for point in points[name]:
+            print "  h={}: mean={}, sd={}".format(*point)
 
 if __name__=="__main__":
-    main3(TEST_FILE_PATH, runs=1, num_snps=100, num_inds=100000)
+    """
+    main3(TEST_FILE_PATH, runs=1, num_snps=100, num_inds=100000, h=0.1)
     print_info(TEST_FILE_PATH)
     """
     if not os.path.exists(FILE_PATH):
-        main3(FILE_PATH, runs=1, num_snps=100, num_inds=100000)
+        main4(FILE_PATH, runs=100, num_snps=100, num_inds=100000)
     print_info(FILE_PATH)
-    """
