@@ -127,9 +127,11 @@ def alex_plot():
 def plot_inds(inds):
     alts = filter(lambda i: i.is_alt, inds)
     normies = filter(lambda i: not i.is_alt, inds)
-    plot_inds_helper(normies, "b.")
     if len(alts) > 0:
         plot_inds_helper(alts, "r.")
+    plot_inds_helper(normies, "b.")
+    plt.show()
+    plot_inds_helper(inds, "b.")
     plt.show()
     
 def plot_inds_helper(inds, label):
