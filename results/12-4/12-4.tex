@@ -1,0 +1,404 @@
+\documentclass[11pt]{hw-template}
+
+\usepackage{enumitem}
+\usepackage{graphicx}
+%\usepackage{mathtools}
+%\lstset{showstringspaces=false}
+%\setlength\parindent{0pt}
+
+\coursename{Continuous Buhmbox - Update 12/4} % DON'T CHANGE THIS
+
+\studname{Alexandre Lamy}
+\studmail{all2187@columbia.edu}
+\hwNo{}
+\collab{}
+
+\begin{document}
+\maketitle
+
+\section*{Notation}
+  
+    As a quick recall, remember that 
+  $$S_{BUHMBOX} = \frac{\sum_{i < j} w_{ij}y_{ij}}{\sqrt{\sum_{i<j}w_{ij}^2}}$$
+  And,
+  $$Y = \alpha(R-R')$$
+
+  Where $w_{ij}$ are weights and, in the standard BB case, $R$ is the sample correlation matrix in cases and $R'$ in controls, and in the continuous BB case, $R$ is the weighted sample correlation matrix
+  (using some weights $\omega$) and $R'$ is the unweighted sample correlation matrix (or equivalently the weighted sample correlation matrix with all equal weights). $\alpha$ is simply a normalization factor
+  to assure that all $y_{ij}$ are $\cN(0, 1)$ in the independent case.
+
+  We denote $r_\omega$ to be the weighted sample correlation between two independent random variables ($X$ and $Y$) calculated on $N$ observations($x_i$ and $y_i$'s), each with weight $\omega_i$ and with 
+  $\sum_i \omega_i = 1$ (and $\forall i, \omega_i \geq 0$). And $r$ to
+  be $r_\omega$ where $\omega$ just gives equal weights to all observations (equivalently the unweighted sample correlation), we sometimes also denote this as $r_{1/N}$ for obvious reasons.
+
+  Then note that in the independent population case, each $y_{ij}$ is distributed like an $r_\omega - r$ for the continuous BB case. 
+  
+  Some extra notation:
+  \begin{itemize}
+    \item We let $\bar{x} = \frac{1}{n}\sum_i x_i$ be the sample mean of observations.
+    \item We let $\hat{x}_{\omega} = \sum_i \omega_i x_i$ be the weighted sample mean of observations.
+    \item We let $\Omega_j = \sum_i \omega_i^j$ for a given weighting scheme $\omega$. Thus $\Omega_1 = 1$. 
+  \end{itemize}
+  We also denote the sample mean of observation $x_1, x_2, ..., x_n$ as  and the weighted sample mean in respect to some weighting $\omega$ as 
+  .
+  
+
+\section*{Theorems and empirically verified conjectures}
+  I claim to have a proof for everything I label as a ``Theorem''. I have empirically verified conjecture but do not yet have proofs. 
+
+  \begin{theorem}
+    Suppose that all $w_{ij}$ are independent and prefixed weights, and assume all $y_{ij}$ are $\cN(0, 1)$. Then $S_{BUHMBOX}$ is distributed as a $\cN(0, 1)$.
+  \end{theorem}
+
+  \begin{remark}
+    This theorem explains why proving that the $y_{ij}$'s are $\cN(0, 1)$ is important. However, the strong (and possibly wrong) assumption of the independence of the $w_{ij}$'s might be the cause of the main
+    current challenge (see remaining problems/challenges section). The rest of the theorems involve trying to prove that the $y_{ij}$'s (or equivalently $r_\omega$ for arbitrary $\omega$'s) are distributed
+    as $\cN(0, 1)$ under independence. 
+  \end{remark}
+
+
+
+  \begin{theorem}
+    $\Ex[r_\omega] = 0$ for any valid $\omega$ (by valid we mean $\sum_i \omega_i = 1$ and $\forall i, \omega_i \geq 0$).
+  \end{theorem}
+
+  \begin{remark}
+    This along with the linearity of expectation and the fact that $r$ is just a special case of $r_\omega$, proves that $\Ex[y_{ij}] = 0$ in both the standard and continuous versions of Buhmbox.
+  \end{remark}
+
+
+  \begin{theorem}
+    $\Var[r] = \Ex[r^2] \approx \frac{1}{N}$ for large $N$.
+  \end{theorem}
+
+  \begin{remark}
+    This comes trivially from the fact that, for normal variables $X$ and $Y$, the sample correlation coefficient has a variance of approximately $$\frac{1 - \rho^2}{N - 2}$$ which is approximately $\frac{1}{N}$
+    in our case. That expression from the variance comes from long papers that use the Fischer Transformation. However, we successfully proved this from first principles, without even relying on the assumption
+    of normality. When doing this we proved that the variance was exactly $\frac{1}{N-1}$ 
+  \end{remark}
+
+  \begin{conjecture}
+    $\Var[r_\omega] = \Ex[r_\omega^2] \approx \sum_i \omega_i^2$
+  \end{conjecture}
+
+  \begin{remark}
+    Note that this is a generalization of theorem 3. However, although being very close, we have not been able to prove this result using similar techniques (I get stuck with a really long expression,
+    I can't simplify). This may be due to the above result being an approximation rather than an exact result. However, it is empirically an \textbf{excellent} approximation.
+  \end{remark}
+
+  \begin{conjecture}
+    $\Var[r_\alpha - r_\beta] = \Ex[(r_\alpha - r_\beta)^2] \approx \sum_i (\alpha_i - \beta_i)^2$.
+    
+    Or, equivalently $\Ex[r_\alpha r_\beta] \approx \sum_i \alpha_i \beta_i$.
+  \end{conjecture}
+
+  \begin{remark}
+    First note that this is again a generalization of both theorem 3 and conjecture 1. Furthermore it was verified to be empirically extremely accurate and matches exactly with the formulation of standard Buhmbox.
+    Indeed note that the standard Buhmbox just calculates $y_{ij}$ as $r_\alpha - r_\beta$ where $\alpha$ gives weights of $\frac{1}{N}$ for all cases and weights of 0 for all controls, and $\beta$ gives weights
+    of $\frac{1}{N'}$ to all controls and weights of 0 to all cases. In which case this result gives us that:
+    $$\Var[y_{ij}] = \Ex[(r_\alpha - r_\beta)^2] = \sum_i (\alpha_i - \beta_i)^2 = \sum_{cases} \paren{\frac{1}{N} - 0}^2 + \sum_{controls} \paren{0 - \frac{1}{N'}}^2 = N\frac{1}{N^2} + N' \frac{1}{N'^2} = \frac{1}{N} + \frac{1}{N'}$$ 
+    Which exacty matches their normalization factor of $\sqrt{\frac{NN'}{N+N'}} = \sqrt{\frac{1}{\frac{1}{N} + \frac{1}{N'}}}$.
+    
+    \bigskip
+    
+    As another quick note, equivalence of the two results simply comes from the fact that
+    $$\Var[r_\alpha - r_\beta] = \Var[r_\alpha] + \Var[r_\beta] -2\text{Cov}[r_\alpha, r_\beta] = \Var[r_\alpha] + \Var[r_\beta] -2\Ex[r_\alpha r_\beta]$$
+    And a teeny bit of algebra.
+    
+    \bigskip
+    
+    Proof wise, the first result seems almost impossible to prove directly. The second seems easier, but proving conjecture 1 would be a first step. There is also an added complexity in that the denominator has
+    a square root that I can't get rid of, and taking the expectation of a square root seems particularly difficult.
+    
+  \end{remark}
+
+
+\section*{Lemmas}
+  A bunch of lemmas that we will rely on in our proofs:
+  
+    %1
+    \begin{lemma}
+      $\Ex[\hat{x}_{\omega}] = \Ex[X]$
+    \end{lemma}
+    
+    \begin{proof}
+      \begin{align*}
+        \Ex[\hat{x}_{\omega}] 
+        &= \Ex[\sum_{k \in I} \omega_k x_k]\\
+        &= \sum_{k \in I} \omega_k \Ex[x_k]\\
+        &= \sum_{k \in I} \omega_k \Ex[X]\\
+        &= E[X] \sum_{k \in I} \omega_k\\
+        &= E[X] \Omega_1\\
+        &= E[X]
+      \end{align*}
+    \end{proof}
+    
+    %2
+    \begin{lemma}
+      $\Ex[\bar{x}^2] = \frac{\Var[X]}{N} + \Ex[X]^2$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Var[\bar{x}] 
+        &= \Var[\frac{1}{N}\sum_i x_i]\\
+        &= \frac{1}{N^2}\Var[\sum_i x_i]\\
+        &= \frac{1}{N^2}\sum_i \Var[x_i] \tag{by independence}\\
+        &= \frac{1}{N^2}N\Var[X]\\
+        &= \frac{1}{N}\Var[X]
+      \end{align*}
+      And
+      \begin{align*}
+        \Var[\bar{x}] 
+        &= \Ex[\bar{x}^2] - \Ex[\bar{x}]^2\\
+        &= \Ex[\bar{x}^2] - \Ex[X]^2\\
+      \end{align*}
+      Hence $\frac{1}{N}\Var[X] = \Ex[\bar{x}^2] - \Ex[X]^2$ which gives the desired result.
+    \end{proof}
+
+    %3
+    \begin{lemma}
+      $\Ex[x_i\bar{x}] = \frac{\Var[X]}{N} + \Ex[X]^2$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[x_i\bar{x}] 
+        &= \Ex[x_i\frac{1}{N}\sum_j x_j]\\
+        &= \frac{1}{N}\Ex[x_i^2 + \sum_{j \neq i} x_ix_j]\\
+        &= \frac{1}{N}(\Ex[x_i^2] + \sum_{j \neq i} \Ex[x_ix_j])\\
+        &= \frac{1}{N}(\Ex[X^2] + (N-1) \Ex[x_i]\Ex[x_j]) \tag{By independence}\\
+        &= \frac{1}{N}(\Ex[X^2] + (N-1) \Ex[X]^2)\\
+        &= \frac{1}{N}(\Var[X] + N\Ex[X]^2)\\
+        &= \frac{\Var[X]}{N} + \Ex[X]^2
+      \end{align*}
+    \end{proof}
+
+    %4
+    \begin{lemma}
+      $\Ex[(x_i - \bar{x})^2] = \frac{N-1}{N}\Var[X]$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[(x_i - \bar{x})^2] 
+        &= \Ex[x_i^2] + \Ex[\bar{x}^2] -2\Ex[x_i\bar{x}]\\
+        &= \Ex[X^2] - \frac{\Var[X]}{N} - \Ex[X]^2 \tag{By lemmas 2 and 3}\\
+        &= \Var[X] - \frac{\Var[X]}{N}\\
+        &= \frac{N-1}{N}\Var[X]
+      \end{align*}
+    \end{proof}
+
+    %5
+    \begin{lemma}
+      $\Ex[(x_k - \bar{x})(x_{k'} - \bar{x})] = -\frac{\Var[X]}{N}$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[(x_k - \bar{x})(x_{k'} - \bar{x})]
+        &= \Ex[x_k x_{k'} + \bar{x}^2 - x_k\bar{x} - x_{k'}\bar{x}] \\
+        &= \Ex[x_k] \Ex[x_{k'}] + \Ex[\bar{x}^2] - \Ex[x_k\bar{x}] - \Ex[x_k\bar{x}] \tag{By linearity and independence}\\
+        &= \Ex[X]^2 + \frac{\Var[X]}{N} + \Ex[X]^2 - 2\paren{\frac{\Var[X]}{N} + \Ex[X]^2} \tag{By lemmas 2 and 3}\\
+        &= \Ex[X]^2 - \frac{\Var[X]}{N} + \Ex[X]^2 \\
+        &= - \frac{\Var[X]}{N}
+      \end{align*}
+    \end{proof}
+    
+    Note that the following lemmas 6-9 are generalizations of lemmas 2-5.
+
+    %6
+    \begin{lemma}
+      $\Ex[\hat{x}_\omega^2] = \Var[X]\Omega_2 + \Ex[X]^2$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Var[\hat{x}_\omega] 
+        &= \Var[\sum_i \omega_i x_i]\\
+        &= \sum_i \omega_i^2 \Var[x_i]\\
+        &= \sum_i \omega_i^2 \Var[X]\\
+        &= \Var[X] \sum_i \omega_i^2 \\
+        &= \Var[X] \Omega_2
+      \end{align*}
+      And
+      \begin{align*}
+        \Var[\hat{x}_\omega] 
+        &= \Ex[\hat{x}_\omega^2] - \Ex[\hat{x}_\omega]^2\\
+        &= \Ex[\hat{x}_\omega^2] - \Ex[X]^2 \tag{By lemma 1}
+      \end{align*}
+      Which yields the desired results.
+    \end{proof}
+
+    %7
+    \begin{lemma}
+      $\Ex[x_i\hat{x}_\omega] = \omega_i \Var[X] + \Ex[X]^2$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[x_i\hat{x}_\omega] 
+        &= \Ex[x_i\sum_j \omega_j x_j]\\
+        &= \omega_i\Ex[x_i^2] + \sum_{j \neq i} \omega_j\Ex[x_i]\Ex[x_j]\\
+        &= \omega_i\Ex[X^2] + \sum_{j \neq i} \omega_j\Ex[X]^2\\
+        &= \omega_i\Ex[X^2] + \Ex[X]^2 (\Omega_1 - \omega_i)\\
+        &= \omega_i\Ex[X^2] + \Ex[X]^2 - \Ex[X]^2\omega_i\\
+        &= \omega_i\Var[X] + \Ex[X]^2
+      \end{align*}
+    \end{proof}
+
+    %8
+    \begin{lemma}
+      $\Ex[(x_i - \hat{x}_\omega)^2] = \Var[X] (\Omega_2 + 1 - 2\omega_i)$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[(x_i - \hat{x}_\omega)^2] 
+        &= \Ex[x_i^2] + \Ex[\hat{x}_\omega^2] -2\Ex[x_i\hat{x}_\omega]\\
+        &= \Ex[X^2] + \Var[X]\Omega_2 + \Ex[X]^2 - 2(\omega_i \Var[X] + \Ex[X]^2) \tag{By lemmas 6 and 7}\\
+        &= \Ex[X^2] + \Var[X]\Omega_2 - \Ex[X]^2 - 2\omega_i \Var[X] \\
+        &= \Var[X] (\Omega_2 + 1 - 2\omega_i)
+      \end{align*}
+    \end{proof}
+
+    %9
+    \begin{lemma}
+      $\Ex[(x_i - \hat{x}_\omega)(x_j - \hat{x}_\omega)] = \Var[X](\Omega_2 - \omega_i - \omega_j)$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[(x_i - \hat{x}_\omega)(x_j - \hat{x}_\omega)]
+        &= \Ex[x_i x_j + \hat{x}_\omega^2 - x_i\hat{x}_\omega - x_j\hat{x}_\omega] \\
+        &= \Ex[x_i] \Ex[x_j] + \Ex[\hat{x}_\omega^2] - \Ex[x_i\hat{x}_\omega] - \Ex[x_j\hat{x}_\omega] \tag{By linearity and independence}\\
+        &= \Ex[X]^2 + \Var[X]\Omega_2 + \Ex[X]^2 - \paren{\omega_i \Var[X] + \Ex[X]^2}- \paren{\omega_i \Var[X] + \Ex[X]^2} \tag{By lemmas 6 and 7}\\
+        &= \Var[X]\Omega_2 - \omega_i \Var[X] - \omega_j \Var[X]\\
+        &= \Var[X](\Omega_2 - \omega_i - \omega_j)
+      \end{align*}
+    \end{proof}
+    
+    %10
+    \begin{lemma}
+      $\Ex[\sum_i\omega_i(x_i - \hat{x}_\omega)^2] = \Var[X] (1 - \Omega_2)$
+    \end{lemma}
+    \begin{proof}
+      \begin{align*}
+        \Ex[\sum_i \omega_i(x_i - \hat{x}_\omega)^2]
+        &= \sum_i \omega_i\Ex[(x_i - \hat{x}_\omega)^2]\\
+        &= \sum_i \omega_i\Var[X] (\Omega_2 + 1 - 2\omega_i) \tag{By lemma 8} \\
+        &= \Var[X] \paren{\sum_i (\omega_i\Omega_2 + \omega_i - 2\omega_i^2)} \\
+        &= \Var[X] (\Omega_2\Omega_1 + \Omega_1 - 2\Omega_2) \\
+        &= \Var[X] (1 - \Omega_2) \\
+      \end{align*}
+    \end{proof}
+\section*{Proofs}
+
+  \begin{proof} Proof of theorem 1
+    
+    Suppose that all $w_{ij}$ are independent and prefixed weights, and assume all $y_{ij}$ are $\cN(0, 1)$. 
+    
+    Then we have:
+    \begin{align*}
+      S_{BB} 
+      &= \sum_{i < j} \frac{w_{ij}}{\sqrt{\sum_{i < j}w_{ij}^2}}y_ij\\
+      &\sim \sum_{i < j} \frac{w_{ij}}{\sqrt{\sum_{i < j}w_{ij}^2}}\cN(0, 1)\\
+      &\sim \sum_{i < j} \cN(0, \frac{w_{ij}^2}{\sum_{i < j}w_{ij}^2})\\
+      &\sim  \cN(0, \frac{\sum_{i < j}w_{ij}^2}{\sum_{i < j}w_{ij}^2})\\
+      &\sim  \cN(0, 1)
+    \end{align*}
+    
+  \end{proof}
+  
+  \begin{proof} Proof of theorem 2
+    We have $r_\omega = \frac{\sum_{k \in I} w_k(x_k - \hat{x}_{\omega})(y_k - \hat{y}_{\omega})}{\sqrt{\sum_{k \in I} w_k(x_k - \hat{x}_{\omega})^2}\sqrt{\sum_{k \in I} w_k(y_k - \hat{y}_{\omega})^2}}$
+    
+    Now note the following:
+    \begin{align*}
+      \Ex\brackets{\sum_{k \in I} w_k(x_k - \hat{x}_{\omega})(y_k - \hat{y}_{\omega})}
+      &= \sum_{k \in I} w_k\Ex[x_k - \hat{x}_{\omega}]\Ex[y_k - \hat{y}_{\omega}] \tag{By independence and linearity of expectation} \\
+      &= \sum_{k \in I} w_k(\Ex[x_k] - \Ex[\hat{x}_{\omega}])(\Ex[y_k] - \Ex[\hat{y}_{\omega}]) \\
+      &= \sum_{k \in I} w_k(\Ex[X] - \Ex[X])(\Ex[Y] - \Ex[Y]) \tag{By lemma 1} \\
+      &= 0
+    \end{align*}
+    
+    Assuming we can somehow use $\Ex\brackets{\frac{A}{B}} = \frac{\Ex[A]}{\Ex[B]}$ that concludes the proof.
+  \end{proof}
+  
+  \newpage
+  \begin{proof} Proof of theorem 3
+    
+    We have $r^2 = \frac{Num}{Denom}$ where:
+    $$Num = \brackets{\sum_{k \in I} (x_k - \bar{x})(y_k - \bar{y})}^2$$
+    $$Denom = \brackets{\sum_{k \in I} (x_k - \bar{x})^2\sum_{k \in I} (y_k - \bar{y})^2}$$
+    
+    
+    We have:
+    \begin{align*}
+      \Ex[Denom] 
+      &= \Ex\brackets{\sum_{k \in I} (x_k - \bar{x})^2\sum_{k \in I} (y_k - \bar{y})^2}\\
+      &= \sum_{k \in I} \Ex[(x_k - \bar{x})^2]\sum_{k \in I} \Ex[(y_k - \bar{y})^2] \tag{By independence and linearity}\\
+      &= \sum_{k \in I} \frac{N-1}{N}\Var{X}\sum_{k \in I} \frac{N-1}{N}\Var[Y] \tag{By lemma 4}\\
+      &= (N-1)^2(\Var[X] + \Var[Y])
+    \end{align*}
+    
+    \begin{align*}
+      \Ex[Num] 
+      &= \Ex\brackets{\paren{\sum_{k \in I} (x_k - \bar{x})(y_k - \bar{y})}^2}\\
+      &= \Ex\brackets{\sum_{k \in I} (x_k - \bar{x})^2(y_k - \bar{y})^2 + 2 \sum_{k, k' \in I, k \neq k'} (x_k - \bar{x})(x_{k'} - \bar{x})(y_k - \bar{y})(y_{k'} - \bar{y})}\\
+      &= \sum_{k \in I} \Ex[(x_k - \bar{x})^2]\Ex[(y_k - \bar{y})^2] + 2 \sum_{k, k' \in I, k \neq k'} \Ex[(x_k - \bar{x})(x_{k'} - \bar{x})] \Ex[(y_k - \bar{y})(y_{k'} - \bar{y})] \tag{By linearity and independence}\\
+      &= \sum_{k \in I} \frac{N-1}{N}\Var[X]\frac{N-1}{N}\Var[Y] + 2 \sum_{k, k' \in I, k \neq k'} (-1)\frac{\Var[X]}{N} (-1)\frac{\Var[X]}{N} \tag{By lemmas 4 and 5}\\
+      &= \paren{\frac{N-1}{N}}^2\Var[X]\Var[Y] \paren{\sum_{k \in I} 1} + 2 \frac{1}{N^2}\Var[X]\Var[Y] \paren{\sum_{k, k' \in I, k \neq k'} 1}\\
+      &= \paren{\frac{N-1}{N}}^2\Var[X]\Var[Y] (N) + 2 \frac{1}{N^2}\Var[X]\Var[Y] \frac{N(N-1)}{2}\\
+      &= \frac{(N-1)^2}{N}\Var[X]\Var[Y] + \frac{N-1}{N}\Var[X]\Var[Y]\\
+      &= \frac{(N-1)^2 + N - 1}{N}\Var[X]\Var[Y] \\
+      &= \frac{N(N-1)}{N}\Var[X]\Var[Y] \\
+      &= (N-1)\Var[X]\Var[Y] \\
+    \end{align*}
+    
+    Assuming we can somehow use $\Ex\brackets{\frac{A}{B}} = \frac{\Ex[A]}{\Ex[B]}$ that concludes the proof.
+  \end{proof}
+  
+  \begin{proof} Partial proof of conjecture 1.
+    
+    We have $r_\omega^2 = \frac{Num}{Denom}$ where:
+    $$Num = \brackets{\sum_{k \in I} \omega_k(x_k - \hat{x}_\omega)(y_k - \hat{x}_\omega)}^2$$
+    $$Denom = \brackets{\sum_{k \in I} \omega_k (x_k - \hat{x}_\omega)^2\sum_{k \in I} \omega_k(y_k - \hat{x}_\omega)^2}$$
+    
+    
+    We have:
+    \begin{align*}
+      \Ex[Denom] 
+      &= \Ex\brackets{\sum_{k \in I} \omega_k (x_k - \hat{x}_\omega)^2\sum_{k \in I} \omega_k(y_k - \hat{x}_\omega)^2}\\
+      &= \Ex\brackets{\sum_{k \in I} \omega_k (x_k - \hat{x}_\omega)^2}\brackets{\sum_{k \in I} \omega_k(y_k - \hat{x}_\omega)^2} \tag{By independence}\\
+      &= \Var[X] (1 - \Omega_2) \Var[Y] (1 - \Omega_2) \tag{By lemma 10}\\
+      &= (1 - \Omega_2)^2 \Var[X]\Var[Y] 
+    \end{align*}
+    
+    And after long number crunching that we omit but will add later if desired (same idea as proof of theorem 1, using lemmas 6-9) we get:
+    $$\Ex[Num] = \Omega_2^3 + 2\Omega_2^2 + \Omega_2 + 4\Omega_4 - 4\Omega_2\Omega_3 -4\Omega_3 + 2\Omega_2^2\Omega_{1, 1} + 4\Omega_{1, 3} + 4\Omega_{2, 2} -8\Omega_2\Omega_{1, 2}$$
+    Where $\Omega_{I, J} = \sum_{i \neq j} w_i^Iw_j^J$
+    
+  \end{proof}
+
+  \begin{proof} Problems for proof of conjecture 2.
+    Neither $\Ex[(r_\alpha - r_\beta)^2] \approx \sum_i (\alpha_i - \beta_i)^2$ nor $\Ex[r_\alpha r_\beta] \approx \sum_i \alpha_i \beta_i$ seem easy to prove.
+    
+    The first makes a minus appear in the calculation which makes things very hard. Combining to common denominators makes the numerator completely nuts.
+    
+    The second causes the denominator to have square roots, blocking us from continuing any further (and the numerator becomes decently more complex that it already was for conjecture 1...).
+  \end{proof}
+
+\section*{Results}
+
+\section*{Remaining Problems and Challenges}
+
+  I obviously still need proofs for conjectures 1 and 2. However a few other problems also present themselves.
+
+  \begin{enumerate}[label=(\arabic*)]
+     \item To prove any of the theorems (or even start proving them or do anything), I had to use the following equality:
+     $$\Ex\brackets{\frac{A}{B}} = \frac{\Ex[A]}{\Ex[B]}$$
+     Where $A$ is more or less the squared covariance and $B$ is the product of the two variances (since $r = \frac{\Cov[X, Y]}{\sqrt{\Var{X}\Var{Y}}}$ and so $r^2 = \frac{\Cov[X, Y]^2}{\Var{X}\Var{Y}}$).
+     
+     Professor Pe'er suggested doing this at some point I think, and it seems to give correct results. However, it is definitely not true in general. Even if $A$ and $B$ are completely independent we have
+     $\Ex\brackets{\frac{A}{B}} = \Ex[A]\Ex[\frac{1}{B}]$, but I can see no reason why we would have $\Ex[\frac{1}{B}] = \frac{1}{\Ex[B]}$ (since this is not true for almost any RV).
+     
+     \item Even though I do not yet have all the proofs, I implemented continuous BB based on the conjecture 2 result. This correctly gave me a variance of 1 for the BB score under independence. However,
+     the expected value of the BB score was clearly not 0. I looked at the values of various $y_{ij}$'s and these were all $\cN(0, 1)$ as expected. So the error could only come from some sort of positive
+     covariance/correlation between the weights $w_{ij}$ and the values of $y_{ij}$ (rendering the result of theorem 1 inapplicable). This seems strongly problematic. 
+     I have not spent much time thinking about the problem but am unsure how to solve it.
+  \end{enumerate}
+
+\end{document} 

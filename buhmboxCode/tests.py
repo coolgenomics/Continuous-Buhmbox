@@ -195,9 +195,9 @@ def main2():
     print(time.time()-start)
 
 def main3():
-    runs = 100
+    runs = 50
     num_snps = 100
-    num_inds = 100000
+    num_inds = 10000
     independent_snps = generate_pss_model_generalized_vect(num_phenos=2, num_snps=np.array([[0, num_snps], [num_snps, 0]]))
     pleiotropy_snps = generate_pss_model_generalized_vect(num_phenos=2, num_snps=np.array([[0, num_snps/2], [num_snps/2, num_snps/2]]))
     b = np.zeros(8).reshape((2, 2, 2))
@@ -329,5 +329,6 @@ def main4():
 
 
 if __name__=="__main__":
-    #main3()
+    #main4()
+    main3()
     print_info()

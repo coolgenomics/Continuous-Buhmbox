@@ -135,15 +135,20 @@ def continuous_buhmbox(genos, phenos, clist,snp_props):
     snp_indivs = genos[:,clist]
     num_indivs = snp_indivs.shape[0]
     weights = get_weights(phenos)
-    
-    N = len(genos)
+    n = float(num_snps)
+    N = float(len(genos))
     w2 = np.sum(weights ** 2)
+    w3 = np.sum((weights - 1/N) ** 2)
     R = corr(snp_indivs.T, weights)
     Rp = np.corrcoef(snp_indivs.T)
-    Y = np.sqrt(1/(1/N + w2)) * (R-Rp)
+    #Y = (1/w3)**0.5 * (R-Rp)
+    Y = (w2 - 1/N)**-0.5 * (R-Rp)
+    #Y = (w2 + 1/N)**-0.5 * (R-Rp)
+    #things = Y[np.triu_indices(num_snps, k=1)]
+    #print np.mean(things), np.var(things)
     
     pi_plus = np.sum(snp_indivs * weights.reshape((num_indivs, 1)), axis=0) / 2
-    pi_minus = np.sum(snp_indivs, axis=0) / (2*num_indivs)
+    pi_minus = np.sum(snp_indivs, axis=0) / (2*float(num_indivs))
     gamma = pi_plus/(1-pi_plus) / (pi_minus/(1-pi_minus))
     
     # calculate SBB
@@ -155,6 +160,7 @@ def continuous_buhmbox(genos, phenos, clist,snp_props):
     mat3 = np.dot(elem3.reshape((num_snps, 1)), elem3.reshape((1, num_snps)))
     w = mat1 * mat2 / mat3
     SBB = np.sum(np.triu(w*Y, k=1)) / np.sqrt(np.sum(np.triu(w ** 2, k=1)))
+    #SBB = np.sum(np.triu(Y, k=1)) / ((n * (n-1)) / 2) ** 0.5
     return SBB
 
 def get_mats_from_pop(pop, phen, z_thresh):
@@ -285,6 +291,19 @@ def print_info(file_path):
         for point in points[name]:
             print "  h={}: mean={}, sd={}".format(*point)
 
+def print_info_tex(file_path):
+    with open(file_path, "rb") as f:
+        points = pickle.load(f)
+    print "independent:"
+    for pointb, pointc in zip(points["ib"], points["ic"]):
+        print "  {:6.2f} & {:6.2f}, {:6.2f} & {:6.2f}, {:6.2f} \\\\".format(pointb[0], pointb[1], pointb[2], pointc[1], pointc[2])
+    print "pleiotropic:"
+    for pointb, pointc in zip(points["pb"], points["pc"]):
+        print "  {:6.2f} & {:6.2f}, {:6.2f} & {:6.2f}, {:6.2f} \\\\".format(pointb[0], pointb[1], pointb[2], pointc[1], pointc[2])
+    print "heterogeneous:"
+    for pointb, pointc in zip(points["hb"], points["hc"]):
+        print "  {:6.2f} & {:6.2f}, {:6.2f} & {:6.2f}, {:6.2f} \\\\".format(pointb[0], pointb[1], pointb[2], pointc[1], pointc[2])
+
 if __name__=="__main__":
     """
     main3(TEST_FILE_PATH, runs=1, num_snps=100, num_inds=100000, h=0.1)
@@ -292,4 +311,5 @@ if __name__=="__main__":
     """
     if not os.path.exists(FILE_PATH):
         main4(FILE_PATH, runs=100, num_snps=100, num_inds=100000)
+    print_info_tex(FILE_PATH)
     print_info(FILE_PATH)
