@@ -304,7 +304,7 @@ def main5(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
     b[0, 1, 0] = num_snps
     hetero_snps = generate_pss_model_generalized(num_phenos=3, num_snps=b)
     
-    bzs = [1.2, 1.5, 1.8, 2.1]
+    bzs = [-0.6, -0.3, -0.1, 0, 0.1, 0.3, 0.6, 0.9, 1.2, 1.5]
     points = {"ic": [], "pc": [], "hc": []}
     for bz in bzs:
         points["ib-" + str(bz)] = []
@@ -368,12 +368,12 @@ def plot_info(file_path):
         else:
             things[name] = 'b-' + name.split('-')[1]
     vals = set(things.values())
-    point_colors = {'b-2.1': 'blue', 'b-1.5': 'green', 'b-1.8': 'purple', 'c': 'orange', 'b-1.2': 'red'}
+    #point_colors = {'b-2.1': 'blue', 'b-1.5': 'green', 'b-1.8': 'purple', 'c': 'orange', 'b-1.2': 'red'}
         
     print "independent means:"
     for name in points:
         if name[0] == "i":
-            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[:2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB mean score")
@@ -385,7 +385,7 @@ def plot_info(file_path):
     print "independent stds:"
     for name in points:
         if name[0] == "i":
-            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[::2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB score std")
@@ -393,11 +393,11 @@ def plot_info(file_path):
     axes = plt.gca()
     axes.set_ylim([0,2])
     plt.show()
-    
+
     print "pleiotropic means:"
     for name in points:
         if name[0] == "p":
-            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[:2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB mean score")
@@ -407,7 +407,7 @@ def plot_info(file_path):
     print "pleiotropic stds:"
     for name in points:
         if name[0] == "p":
-            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[::2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB score std")
@@ -417,7 +417,7 @@ def plot_info(file_path):
     print "heterogeneous means:"
     for name in points:
         if name[0] == "h":
-            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[:2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB mean score")
@@ -427,7 +427,7 @@ def plot_info(file_path):
     print "heterogeneous stds:"
     for name in points:
         if name[0] == "h":
-            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+            plt.plot(*(zip(*points[name])[::2]), label=name)#, c=point_colors[things[name]])
     plt.legend()
     plt.xlabel("heritability")
     plt.ylabel("BB score std")
@@ -453,7 +453,7 @@ if __name__=="__main__":
     print_info(TEST_FILE_PATH)
     """
     if not os.path.exists(FILE_PATH):
-        main5(FILE_PATH, runs=100, num_snps=100, num_inds=200000)
+        main5(FILE_PATH, runs=100, num_snps=100, num_inds=1000)
     #print_info_tex(FILE_PATH)
     #print_info(FILE_PATH)
     plot_info(FILE_PATH)
