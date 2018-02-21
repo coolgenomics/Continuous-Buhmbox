@@ -3,6 +3,7 @@ import numpy as np
 import time
 from scipy.stats import rankdata
 import pickle
+import matplotlib.pyplot as plt
 
 FILE_PATH = "info.pickle"
 TEST_FILE_PATH = "info-test.pickle"
@@ -134,22 +135,30 @@ def continuous_buhmbox(genos, phenos, clist,snp_props):
     num_snps = len(clist)
     snp_indivs = genos[:,clist]
     num_indivs = snp_indivs.shape[0]
+    percent_holdout = 0.05
+    num_holdout = int(0.05 * num_indivs)
+    num_used_indivs = num_indivs - num_holdout
+    
+    # split into first 5% and rest
+    perm = np.random.permutation(num_indivs)
+    snp_indivs, phenos = snp_indivs[perm], phenos[perm]
+    snp_indivs_holdout, snp_indivs = snp_indivs[:num_holdout], snp_indivs[num_holdout:]
+    phenos_holdout, phenos = phenos[:num_holdout], phenos[num_holdout:]
+    
+    # find pi/gamma
+    weights = get_weights(phenos_holdout)
+    pi_plus = np.sum(snp_indivs_holdout * weights.reshape((num_holdout, 1)), axis=0) / 2
+    pi_minus = np.sum(snp_indivs_holdout, axis=0) / (2*float(num_holdout))
+    gamma = pi_plus/(1-pi_plus) / (pi_minus/(1-pi_minus))
+    
+    # get weights for not holdout sample and do BB
     weights = get_weights(phenos)
     n = float(num_snps)
-    N = float(len(genos))
+    N = float(num_used_indivs)
     w2 = np.sum(weights ** 2)
-    w3 = np.sum((weights - 1/N) ** 2)
     R = corr(snp_indivs.T, weights)
     Rp = np.corrcoef(snp_indivs.T)
-    #Y = (1/w3)**0.5 * (R-Rp)
     Y = (w2 - 1/N)**-0.5 * (R-Rp)
-    #Y = (w2 + 1/N)**-0.5 * (R-Rp)
-    #things = Y[np.triu_indices(num_snps, k=1)]
-    #print np.mean(things), np.var(things)
-    
-    pi_plus = np.sum(snp_indivs * weights.reshape((num_indivs, 1)), axis=0) / 2
-    pi_minus = np.sum(snp_indivs, axis=0) / (2*float(num_indivs))
-    gamma = pi_plus/(1-pi_plus) / (pi_minus/(1-pi_minus))
     
     # calculate SBB
     elem1 = np.sqrt(pi_minus*(1-pi_minus))
@@ -258,7 +267,8 @@ def main4(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
         ic = []
         pc = []
         hc = []
-        for i in range(0, runs):    
+        for i in range(0, runs):
+            print str(h) + "-" + str(i)
             independent_pop = generate_population(independent_snps, num_inds=num_inds, h=h)
             pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds, h=h)
             hetero_pop = generate_hetero_population(hetero_snps, num_inds=num_inds, h=h)
@@ -278,7 +288,63 @@ def main4(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
             hc.append(run_cont_buhmbox_on_pop(hetero_pop, hetero_snps))
         for arr, name in ((ib, "ib"), (pb, "pb"), (hb, "hb"), (ic, "ic"), (pc, "pc"), (hc, "hc")):
             points[name].append((h, np.mean(arr), np.std(arr)))
-        print h
+        print str(h) + " is done"
+    with open(file_path, "wb") as f:
+        pickle.dump(points, f)
+    print(time.time()-start)
+
+def main5(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
+    start = time.time()
+    independent_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps], [num_snps, 0]]))
+    pleiotropy_snps = generate_pss_model_generalized(num_phenos=2, num_snps=np.array([[0, num_snps/2], [num_snps/2, num_snps/2]]))
+    b = np.zeros(8).reshape((2, 2, 2))
+    b[1, 0, 0] = num_snps/4
+    b[0, 0, 1] = num_snps/4
+    b[1, 0, 1] = num_snps*3/4
+    b[0, 1, 0] = num_snps
+    hetero_snps = generate_pss_model_generalized(num_phenos=3, num_snps=b)
+    
+    bzs = [1.2, 1.5, 1.8, 2.1]
+    points = {"ic": [], "pc": [], "hc": []}
+    for bz in bzs:
+        points["ib-" + str(bz)] = []
+        points["pb-" + str(bz)] = []
+        points["hb-" + str(bz)] = []
+    for h in (1, 0.5, 0.3, 0.2, 0.15, 0.1, 0.05):
+        ic = []
+        pc = []
+        hc = []
+        ibs = {bz: [] for bz in bzs}
+        pbs = {bz: [] for bz in bzs}
+        hbs = {bz: [] for bz in bzs}
+        for i in range(0, runs):    
+            print str(h) + "-" + str(i)
+            independent_pop = generate_population(independent_snps, num_inds=num_inds, h=h)
+            pleiotropic_pop = generate_population(pleiotropy_snps, num_inds=num_inds, h=h)
+            hetero_pop = generate_hetero_population(hetero_snps, num_inds=num_inds, h=h)
+            
+            '''
+            plot_inds(independent_pop)
+            plot_inds(pleiotropic_pop)
+            plot_inds(hetero_pop)
+            plot_inds_alts(hetero_pop)
+            '''
+
+            ic.append(run_cont_buhmbox_on_pop(independent_pop, independent_snps))
+            pc.append(run_cont_buhmbox_on_pop(pleiotropic_pop, pleiotropy_snps))
+            hc.append(run_cont_buhmbox_on_pop(hetero_pop, hetero_snps))
+            for bz in bzs:
+                ibs[bz].append(run_buhmbox_on_pop(independent_pop, independent_snps, z=bz))
+                pbs[bz].append(run_buhmbox_on_pop(pleiotropic_pop, pleiotropy_snps, z=bz))
+                hbs[bz].append(run_buhmbox_on_pop(hetero_pop, hetero_snps, z=bz))
+        for arr, name in ((ic, "ic"), (pc, "pc"), (hc, "hc")):
+            points[name].append((h, np.mean(arr), np.std(arr)))
+        for bz in bzs:
+            for root, array_master in (("ib-", ibs), ("pb-", pbs), ("hb-", hbs)):
+                name = root + str(bz)
+                arr = array_master[bz]
+                points[name].append((h, np.mean(arr), np.std(arr)))
+        print str(h) + " is done"
     with open(file_path, "wb") as f:
         pickle.dump(points, f)
     print(time.time()-start)
@@ -290,6 +356,83 @@ def print_info(file_path):
         print name + ":"
         for point in points[name]:
             print "  h={}: mean={}, sd={}".format(*point)
+
+def plot_info(file_path):
+    with open(file_path, "rb") as f:
+        points = pickle.load(f)
+    
+    things = {}
+    for name in points:
+        if name[1] == 'c':
+            things[name] = 'c'
+        else:
+            things[name] = 'b-' + name.split('-')[1]
+    vals = set(things.values())
+    point_colors = {'b-2.1': 'blue', 'b-1.5': 'green', 'b-1.8': 'purple', 'c': 'orange', 'b-1.2': 'red'}
+        
+    print "independent means:"
+    for name in points:
+        if name[0] == "i":
+            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB mean score")
+    plt.title("Independent population - BB means")
+    axes = plt.gca()
+    axes.set_ylim([-1,1])
+    plt.show()
+    
+    print "independent stds:"
+    for name in points:
+        if name[0] == "i":
+            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB score std")
+    plt.title("Independent population - BB stds")
+    axes = plt.gca()
+    axes.set_ylim([0,2])
+    plt.show()
+    
+    print "pleiotropic means:"
+    for name in points:
+        if name[0] == "p":
+            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB mean score")
+    plt.title("Pleiotropic population - BB means")
+    plt.show()
+    
+    print "pleiotropic stds:"
+    for name in points:
+        if name[0] == "p":
+            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB score std")
+    plt.title("Pleiotropic population - BB stds")
+    plt.show()
+    
+    print "heterogeneous means:"
+    for name in points:
+        if name[0] == "h":
+            plt.plot(*(zip(*points[name])[:2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB mean score")
+    plt.title("Heterogeneous population - BB means")
+    plt.show()
+    
+    print "heterogeneous stds:"
+    for name in points:
+        if name[0] == "h":
+            plt.plot(*(zip(*points[name])[::2]), label=name, c=point_colors[things[name]])
+    plt.legend()
+    plt.xlabel("heritability")
+    plt.ylabel("BB score std")
+    plt.title("Heterogeneous population - BB stds")
+    plt.show()
 
 def print_info_tex(file_path):
     with open(file_path, "rb") as f:
@@ -310,6 +453,9 @@ if __name__=="__main__":
     print_info(TEST_FILE_PATH)
     """
     if not os.path.exists(FILE_PATH):
-        main4(FILE_PATH, runs=100, num_snps=100, num_inds=100000)
-    print_info_tex(FILE_PATH)
+        main5(FILE_PATH, runs=100, num_snps=100, num_inds=200000)
+    #print_info_tex(FILE_PATH)
+    #print_info(FILE_PATH)
+    plot_info(FILE_PATH)
     print_info(FILE_PATH)
+    

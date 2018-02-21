@@ -45,13 +45,14 @@ def main1():
 def main2():
     n = 1000
     runs = 100000
-    w1 = np.random.rand(n)
-    w2 = np.random.rand(n)
+    w1 = np.random.exponential(size=n)
+    w2 = np.ones(n)
     w1 = w1 / np.sum(w1)
     w2 = w2 / np.sum(w2)
     print(np.sum(w1**2))
     print(np.sum(w2**2))
     print(np.sum((w1-w2)**2))
+    print(np.sum(w1**2) - 1.0/n)
     print get_corr_corr(runs, n, w1, w2)
     
 
