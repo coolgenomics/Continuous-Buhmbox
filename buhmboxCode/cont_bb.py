@@ -380,7 +380,7 @@ def simulate_mult_n(file_path, runs=1, num_snps=100, h=0.3):
         points["pb-" + str(bz)] = []
         points["hb-" + str(bz)] = []
 #    for num_inds in (1000, 5000, 10000, 20000, 50000, 100000):
-    for num_inds in (100, 200):
+    for num_inds in (2000,3000):
         ic = []
         pc = []
         hc = []
@@ -413,7 +413,7 @@ def simulate_mult_n(file_path, runs=1, num_snps=100, h=0.3):
             for root, array_master in (("ib-", ibs), ("pb-", pbs), ("hb-", hbs)):
                 name = root + str(bz)
                 arr = array_master[bz]
-                points[name].append((h, np.mean(arr), np.std(arr)))
+                points[name].append((num_inds, np.mean(arr), np.std(arr)))
         print str(num_inds) + " is done"
     with open(file_path, "wb") as f:
         pickle.dump(points, f)
@@ -527,6 +527,6 @@ if __name__=="__main__":
         simulate_mult_n(FILE_PATH, runs=100, num_snps=100, h=0.5)
     #print_info_tex(FILE_PATH)
     #print_info(FILE_PATH)
-    #plot_info(FILE_PATH)
+    plot_info(FILE_PATH, xlabel="num_indivs")
     #print_info(FILE_PATH)
     
