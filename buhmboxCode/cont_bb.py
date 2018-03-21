@@ -352,7 +352,7 @@ def main5(file_path, runs=1, num_snps=100, num_inds=100000, h=1):
 def print_info(file_path):
     with open(file_path, "rb") as f:
         points = pickle.load(f)
-    for name in points:
+    for name in sorted(points.keys()):
         print name + ":"
         for point in points[name]:
             print "  h={}: mean={}, sd={}".format(*point)
